@@ -1,17 +1,103 @@
-<!-- result.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sentiment Analysis Result</title>
-  <!-- Add your CSS or use a framework like Bootstrap for styling -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --cyber-cyan: #00f3ff;
+      --cyber-magenta: #ff00ff;
+      --cyber-bg: #0a0a12;
+      --cyber-border: #1a1a2d;
+    }
+
+    body {
+      background-color: var(--cyber-bg);
+      color: var(--cyber-cyan);
+      min-height: 100vh;
+      padding: 2rem;
+      font-family: 'Orbitron', sans-serif;
+      background-image: 
+        linear-gradient(var(--cyber-border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--cyber-border) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    .result-container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 2rem;
+      border: 2px solid var(--cyber-cyan);
+      border-radius: 5px;
+      background: rgba(10, 10, 18, 0.9);
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+    }
+
+    .sentiment-badge {
+      font-size: 2rem;
+      padding: 1rem 2rem;
+      border: 2px solid;
+      border-radius: 5px;
+      text-transform: uppercase;
+      margin: 1rem 0;
+    }
+
+    .confidence-meter {
+      height: 20px;
+      background: var(--cyber-border);
+      border-radius: 10px;
+      margin: 2rem 0;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyber-cyan), var(--cyber-magenta));
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    .score-display {
+      font-size: 3rem;
+      margin: 1rem 0;
+      text-shadow: 0 0 10px var(--cyber-cyan);
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(45deg, var(--cyber-cyan), var(--cyber-magenta));
+      border: none;
+      color: var(--cyber-bg);
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>Sentiment Analysis Result</h1>
-  <p><strong>Result:</strong> <%= result %></p>
-  
-  <!-- Back button -->
-  <a href="/" class="btn btn-primary">Back</a>
+  <div class="result-container">
+    <h1>ANALYSIS RESULT</h1>
+    <% if(locals.result){ %> 
+      <% console.log(`This is from result.ejs  ${result.label}`); %>
+      <div class="sentiment-badge" style="color: <%= result.label === 'NEGATIVE' ? '#ff0066' : '#00ff00' %>">
+      <%= result.label %>
+    </div>
+
+    <div class="score-display">
+      <%= (result.score * 100).toFixed(1) %>%
+    </div>
+
+    <div class="confidence-meter">
+      <div class="confidence-fill" style="width: <%= (result.score * 100).toFixed(1) %>%"></div>
+    </div>
+    <% } %>
+    
+
+    <a href="/dashboard" class="btn-primary">NEW ANALYSIS</a>
+  </div>
 </body>
 </html>
