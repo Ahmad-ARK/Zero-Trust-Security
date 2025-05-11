@@ -7,6 +7,9 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const { spawn } = require("child_process");
 const User = require("./models/User");
+const geoip = require('geoip-lite');
+const rateLimit = require('express-rate-limit');
+
 
 dotenv.config();
 const app = express();
@@ -30,6 +33,13 @@ app.use(
         store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
     })
 );
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 5, // 5 attempts per IP
+  message: "Too many login attempts from this IP, try again after 15 minutes",
+});
+
 
 
 mongoose.connect(process.env.MONGO_URI);
@@ -64,11 +74,36 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", loginLimiter ,async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
 
-    const currentIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    //const currentIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    const currentIP = req.headers['x-forwarded-for']
+        ? req.headers['x-forwarded-for'].split(',')[0] // First IP in the chain
+        : req.socket.remoteAddress;  // Use req.socket.remoteAddress
+
+    const formattedIP = currentIP.replace(/^.*:/, ''); // Strip off the IPv6 prefix if needed
+
+    console.log(`Raw IP: ${currentIP}`);
+    console.log(`Formatted IP: ${formattedIP}`);
+
+    if (formattedIP === '::1' || formattedIP === '127.0.0.1') {
+        console.log("Local request detected, bypassing Geo-IP check.");
+    } else {
+        const geo = geoip.lookup(formattedIP);
+        console.log(`Geo Lookup Result: ${JSON.stringify(geo)}`);
+
+        if (geo?.country == 'IN') {
+            return res.status(403).send("Access denied from your region.");
+        }
+    }
+
+
+
+
+
     const userAgent = req.get("User-Agent");
 
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -137,7 +172,7 @@ app.post("/analyze", requireAuth, (req, res) => {
         }
 
         try {
-            
+
             const parsedResult = JSON.parse(result.trim()); // ✅ Fix here
             console.log("Sentiment result:", parsedResult);
             res.render("result", { result: parsedResult }); // ✅ Send object
