@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Setup Two-Factor Authentication</title>
+      <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    img {
+        margin-left: 43%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Scan this QR Code with your Authenticator App</h2>
+  <img src="<%= qrCodeURL %>" alt="QR Code for 2FA" />
+  
+  <form method="POST" action="/2fa-setup">
+    <input type="text" name="token" placeholder="Enter code from app" required />
+    <button type="submit">Enable 2FA</button>
+  </form>
+</body>
+</html>

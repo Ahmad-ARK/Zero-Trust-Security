@@ -12,6 +12,8 @@ const geoip = require("geoip-lite");
 const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 
 const app = express();
 
@@ -46,7 +48,7 @@ const loginLimiter = rateLimit({
   message: "Too many login attempts. Try again in 15 minutes.",
 });
 
-// Connect MongoDB
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
@@ -118,6 +120,11 @@ app.post("/login", loginLimiter, async (req, res) => {
     user.lastUserAgent = userAgent;
     await user.save();
 
+    if (user.twoFactorEnabled) {
+      req.session.tempUserId = user._id;
+      return res.redirect("/2fa");
+    }
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
@@ -134,10 +141,72 @@ app.post("/login", loginLimiter, async (req, res) => {
   res.send("Invalid credentials");
 });
 
+app.get("/2fa", (req, res) => {
+  if (!req.session.tempUserId) return res.redirect("/login");
+  res.render("2fa");
+});
+
+app.post("/2fa", async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.session.tempUserId);
+  if (!user || !user.twoFactorSecret) return res.redirect("/login");
+
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: "base32",
+    token,
+  });
+
+  if (verified) {
+    delete req.session.tempUserId;
+    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    return res.redirect("/dashboard");
+  } else {
+    return res.send("Invalid OTP");
+  }
+});
+
+app.get("/2fa-setup", requireAuth, async (req, res) => {
+  const secret = speakeasy.generateSecret({ name: `ZeroTrust (${req.user.username})` });
+  req.session.tempSecret = secret.base32;
+
+  qrcode.toDataURL(secret.otpauth_url, (err, dataURL) => {
+    if (err) return res.status(500).send("Error generating QR code.");
+    res.render("2fa-setup", { qrCodeURL: dataURL });
+  });
+});
+
+app.post("/2fa-setup", requireAuth, async (req, res) => {
+  const { token } = req.body;
+  const verified = speakeasy.totp.verify({
+    secret: req.session.tempSecret,
+    encoding: "base32",
+    token,
+  });
+
+  if (verified) {
+    req.user.twoFactorEnabled = true;
+    req.user.twoFactorSecret = req.session.tempSecret;
+    await req.user.save();
+    delete req.session.tempSecret;
+    return res.redirect("/dashboard");
+  } else {
+    return res.send("Invalid token, please try again.");
+  }
+});
+
 app.get("/dashboard", requireAuth, (req, res) => {
   const warning = req.query.warn === "1";
-  res.render("index", { warning });
+  res.render("index", { warning, user: req.user });
 });
+
 
 app.post("/logout", (req, res) => {
   res.clearCookie("token");
@@ -179,5 +248,5 @@ app.post("/analyze", requireAuth, (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("🚀 Server running on http://localhost:3000")
+  console.log("Server running on http://localhost:3000")
 );

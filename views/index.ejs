@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <h1>Welcome to the Dashboard</h1>
+  <h1>Welcome to your Dashboard</h1>
+
   <% if (warning) { %>
-    <p style="color:red;">⚠️ New device or IP detected</p>
+    <p style="color: red;">Warning: New device or IP detected!</p>
   <% } %>
 
   <form action="/analyze" method="POST">
@@ -17,8 +17,16 @@
     <button type="submit">Analyze</button>
   </form>
 
+  <br>
   <form action="/logout" method="POST">
     <button type="submit">Logout</button>
   </form>
+
+  <br>
+  <% if (!user?.twoFactorEnabled) { %>
+    <a href="/2fa-setup"><button>Set up 2FA</button></a>
+  <% } else { %>
+    <p>2FA is enabled ✅</p>
+  <% } %>
 </body>
 </html>

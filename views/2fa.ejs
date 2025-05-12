@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Two-Factor Authentication</title>
+      <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h2>Enter your 2FA Code</h2>
+  <form method="POST" action="/2fa">
+    <input type="text" name="token" placeholder="6-digit code" required />
+    <button type="submit">Verify</button>
+  </form>
+</body>
+</html>
