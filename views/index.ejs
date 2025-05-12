@@ -1,28 +1,24 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <h1>Welcome to Sentiment Analyzer</h1>
-<form action="/analyze" method="POST">
-  <% if (typeof warning !== 'undefined' && warning) { %>
-  <div style="color: red; font-weight: bold;">
-    Suspicious login detected: new device or location!
-  </div>
+  <h1>Welcome to the Dashboard</h1>
+  <% if (warning) { %>
+    <p style="color:red;">⚠️ New device or IP detected</p>
   <% } %>
 
-  <textarea name="text" rows="5" cols="40" placeholder="Enter text here"></textarea><br>
-  <button type="submit">Analyze</button>
-</form>
-<a href="/logout">Logout</a>
+  <form action="/analyze" method="POST">
+    <textarea name="text" placeholder="Enter text for sentiment analysis" required></textarea>
+    <button type="submit">Analyze</button>
+  </form>
+
+  <form action="/logout" method="POST">
+    <button type="submit">Logout</button>
+  </form>
 </body>
 </html>
